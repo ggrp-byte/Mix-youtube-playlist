@@ -1,0 +1,679 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mix Archive — Save YouTube Mix tracks to one playlist</title>
+<meta name="description" content="Mix Archive turns any YouTube Mix into an organized playlist archive. One click saves the queue, built-in deduplication keeps it clean, and auto-capture adds new tracks as you listen.">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --bg: #0b0d12;
+    --bg-card: rgba(255,255,255,0.04);
+    --border: rgba(255,255,255,0.08);
+    --text: #f4f7fb;
+    --text-muted: #c8d0dc;
+    --text-dim: #8b95a7;
+    --accent: #ff5e62;
+    --accent2: #ff9966;
+    --accent-soft: #ff8d92;
+    --green: #7ae7a2;
+    --radius: 16px;
+  }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.7;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* ── HERO ── */
+  .hero {
+    text-align: center;
+    padding: 80px 24px 60px;
+    background:
+      radial-gradient(circle at 80% 20%, rgba(255,94,98,0.12), transparent 50%),
+      radial-gradient(circle at 20% 80%, rgba(255,153,102,0.08), transparent 50%);
+  }
+
+  .hero .badge-row {
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+    flex-wrap: wrap;
+    margin-bottom: 24px;
+  }
+
+  .badge {
+    padding: 6px 14px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 700;
+    border: 1px solid transparent;
+  }
+
+  .badge-version { background: rgba(255,94,98,0.12); color: var(--accent-soft); border-color: rgba(255,94,98,0.25); }
+  .badge-mv3 { background: rgba(122,231,162,0.12); color: var(--green); border-color: rgba(122,231,162,0.25); }
+  .badge-free { background: rgba(255,255,255,0.06); color: var(--text-muted); border-color: rgba(255,255,255,0.12); }
+
+  .hero h1 {
+    font-size: 48px;
+    font-weight: 800;
+    background: linear-gradient(135deg, var(--accent) 0%, var(--accent2) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 16px;
+    letter-spacing: -0.02em;
+  }
+
+  .hero .tagline {
+    font-size: 20px;
+    color: var(--text-muted);
+    max-width: 560px;
+    margin: 0 auto 32px;
+  }
+
+  .hero .cta {
+    display: inline-flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 14px 28px;
+    border-radius: 12px;
+    font-size: 16px;
+    font-weight: 700;
+    text-decoration: none;
+    transition: transform 0.15s, box-shadow 0.15s;
+    border: none;
+    cursor: pointer;
+  }
+
+  .btn:hover { transform: translateY(-2px); }
+
+  .btn-primary {
+    background: linear-gradient(135deg, var(--accent) 0%, var(--accent2) 100%);
+    color: #fff;
+    box-shadow: 0 8px 24px rgba(255,94,98,0.3);
+  }
+
+  .btn-secondary {
+    background: rgba(255,255,255,0.08);
+    color: var(--text);
+    border: 1px solid var(--border);
+  }
+
+  /* ── SECTIONS ── */
+  .section {
+    max-width: 860px;
+    margin: 0 auto;
+    padding: 60px 24px;
+  }
+
+  .section h2 {
+    font-size: 28px;
+    font-weight: 800;
+    text-align: center;
+    margin-bottom: 40px;
+  }
+
+  /* ── FEATURE GRID ── */
+  .feature-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 16px;
+  }
+
+  .feature-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 24px;
+    transition: border-color 0.2s;
+  }
+
+  .feature-card:hover { border-color: rgba(255,94,98,0.2); }
+
+  .feature-card .icon {
+    font-size: 28px;
+    margin-bottom: 12px;
+  }
+
+  .feature-card h3 {
+    font-size: 16px;
+    font-weight: 700;
+    margin-bottom: 6px;
+  }
+
+  .feature-card p {
+    font-size: 14px;
+    color: var(--text-muted);
+  }
+
+  /* ── COMPARISON TABLE ── */
+  .comparison {
+    max-width: 600px;
+    margin: 0 auto;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+  }
+
+  .comparison table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+
+  .comparison th, .comparison td {
+    padding: 14px 20px;
+    text-align: left;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .comparison th {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    font-size: 12px;
+  }
+
+  .comparison td { font-size: 15px; }
+  .comparison .check { color: var(--green); font-weight: 700; }
+  .comparison .cross { color: #6b7488; }
+  .comparison tr:last-child td { border-bottom: none; }
+
+  /* ── HOW IT WORKS ── */
+  .steps {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 24px;
+    max-width: 700px;
+    margin: 0 auto;
+  }
+
+  .step {
+    text-align: center;
+  }
+
+  .step .num {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    font-weight: 800;
+    color: #fff;
+    margin: 0 auto 16px;
+  }
+
+  .step h3 { font-size: 16px; margin-bottom: 6px; }
+  .step p { font-size: 14px; color: var(--text-muted); }
+
+  /* ── LANGUAGES ── */
+  .lang-grid {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    justify-content: center;
+    max-width: 600px;
+    margin: 0 auto;
+  }
+
+  .lang-chip {
+    padding: 6px 14px;
+    border-radius: 999px;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    font-size: 13px;
+    color: var(--text-muted);
+  }
+
+  /* ── PRIVACY ── */
+  .privacy-section {
+    background: rgba(255,255,255,0.02);
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+    padding: 60px 24px;
+  }
+
+  .privacy-content {
+    max-width: 760px;
+    margin: 0 auto;
+  }
+
+  .privacy-content h3 {
+    font-size: 18px;
+    font-weight: 700;
+    margin: 32px 0 12px;
+  }
+
+  .privacy-content p, .privacy-content li {
+    color: var(--text-muted);
+    margin-bottom: 10px;
+  }
+
+  .privacy-content ul {
+    list-style: none;
+    margin: 12px 0;
+  }
+
+  .privacy-content ul li {
+    padding: 4px 0 4px 24px;
+    position: relative;
+  }
+
+  .privacy-content ul li::before {
+    content: "▸";
+    position: absolute;
+    left: 0;
+    color: var(--accent);
+  }
+
+  .privacy-content a {
+    color: var(--accent2);
+    text-decoration: none;
+    border-bottom: 1px solid rgba(255,153,102,0.3);
+  }
+
+  .privacy-content a:hover { border-color: var(--accent2); }
+
+  .privacy-content code {
+    background: rgba(255,255,255,0.08);
+    padding: 2px 8px;
+    border-radius: 6px;
+    font-size: 13px;
+    color: #ffd5d7;
+  }
+
+  .disclaimer {
+    background: rgba(255,94,98,0.06);
+    border: 1px solid rgba(255,94,98,0.15);
+    border-radius: 12px;
+    padding: 16px 20px;
+    margin: 20px 0;
+    font-size: 14px;
+    color: var(--text-muted);
+  }
+
+  .disclaimer strong { color: var(--accent-soft); }
+
+  .perm-grid {
+    display: grid;
+    gap: 10px;
+    margin: 16px 0;
+  }
+
+  .perm-item {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px 16px;
+  }
+
+  .perm-item strong { color: var(--accent2); display: block; margin-bottom: 2px; }
+  .perm-item span { color: var(--text-dim); font-size: 14px; }
+
+  /* ── FOOTER ── */
+  footer {
+    text-align: center;
+    padding: 40px 24px;
+    color: var(--text-dim);
+    font-size: 14px;
+  }
+
+  footer a { color: var(--accent2); text-decoration: none; }
+
+  /* ── NAV ── */
+  nav {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: rgba(11,13,18,0.85);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--border);
+    padding: 12px 24px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    max-width: 100%;
+  }
+
+  nav .logo {
+    font-weight: 800;
+    font-size: 18px;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  nav .nav-links {
+    display: flex;
+    gap: 20px;
+    align-items: center;
+  }
+
+  nav .nav-links a {
+    color: var(--text-muted);
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: 600;
+    transition: color 0.2s;
+  }
+
+  nav .nav-links a:hover { color: var(--text); }
+
+  nav .nav-install {
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    color: #fff;
+    padding: 8px 18px;
+    border-radius: 10px;
+    font-size: 14px;
+    font-weight: 700;
+  }
+
+  @media (max-width: 600px) {
+    .hero h1 { font-size: 32px; }
+    .hero .tagline { font-size: 16px; }
+    .section h2 { font-size: 22px; }
+    nav .nav-links a:not(.nav-install) { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ── NAV ── -->
+<nav>
+  <div class="logo">🎵 Mix Archive</div>
+  <div class="nav-links">
+    <a href="#features">Features</a>
+    <a href="#how">How It Works</a>
+    <a href="#pricing">Pricing</a>
+    <a href="#privacy">Privacy</a>
+    <a href="https://chromewebstore.google.com/detail/amgdkimmkgfmkdnclchmcbdaafkgflih" class="nav-install" target="_blank" rel="noopener">Install →</a>
+  </div>
+</nav>
+
+<!-- ── HERO ── -->
+<section class="hero">
+  <div class="badge-row">
+    <span class="badge badge-version">v0.2.0</span>
+    <span class="badge badge-mv3">Manifest V3</span>
+    <span class="badge badge-free">Free + Pro</span>
+  </div>
+  <h1>Mix Archive</h1>
+  <p class="tagline">Save YouTube Mix tracks to one playlist. No duplicates. Forever.</p>
+  <div class="cta">
+    <a href="https://chromewebstore.google.com/detail/amgdkimmkgfmkdnclchmcbdaafkgflih" target="_blank" rel="noopener" class="btn btn-primary">
+      🚀 Install for Chrome — Free
+    </a>
+    <a href="#how" class="btn btn-secondary">How it works</a>
+  </div>
+</section>
+
+<!-- ── FEATURES ── -->
+<section class="section" id="features">
+  <h2>✨ Features</h2>
+  <div class="feature-grid">
+    <div class="feature-card">
+      <div class="icon">🖱️</div>
+      <h3>One-click save</h3>
+      <p>Save the current YouTube Mix queue to your archive playlist with a single click.</p>
+    </div>
+    <div class="feature-card">
+      <div class="icon">🚫</div>
+      <h3>No duplicates</h3>
+      <p>Built-in deduplication by videoId — tracks already in your archive are skipped automatically.</p>
+    </div>
+    <div class="feature-card">
+      <div class="icon">📋</div>
+      <h3>Inline panel</h3>
+      <p>A compact panel appears directly on the YouTube Mix page — no need to open the popup.</p>
+    </div>
+    <div class="feature-card">
+      <div class="icon">🤖</div>
+      <h3>Auto-capture (Pro)</h3>
+      <p>New tracks are added to your archive in the background as you listen to a Mix.</p>
+    </div>
+    <div class="feature-card">
+      <div class="icon">🎵</div>
+      <h3>Playlist picker</h3>
+      <p>Choose an existing playlist or create a new one without leaving YouTube.</p>
+    </div>
+    <div class="feature-card">
+      <div class="icon">⏱️</div>
+      <h3>Duration & skip filters</h3>
+      <p>Ignore tracks shorter than a threshold or ones you skip within the first N seconds.</p>
+    </div>
+    <div class="feature-card">
+      <div class="icon">🌍</div>
+      <h3>25 languages</h3>
+      <p>Full UI localization: English, Polish, German, French, Spanish, and 20 more.</p>
+    </div>
+    <div class="feature-card">
+      <div class="icon">🔒</div>
+      <h3>No backend</h3>
+      <p>Everything runs in your browser — no external servers, no tracking, no data collection.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ── HOW IT WORKS ── -->
+<section class="section" id="how">
+  <h2>🔧 How It Works</h2>
+  <div class="steps">
+    <div class="step">
+      <div class="num">1</div>
+      <h3>Open a Mix</h3>
+      <p>Go to youtube.com and open any Mix (URL with <code>list=RD...</code>)</p>
+    </div>
+    <div class="step">
+      <div class="num">2</div>
+      <h3>Click Save</h3>
+      <p>Use the inline panel or popup to save the current queue to your archive</p>
+    </div>
+    <div class="step">
+      <div class="num">3</div>
+      <h3>Done</h3>
+      <p>Tracks are added to your playlist — duplicates are skipped automatically</p>
+    </div>
+  </div>
+</section>
+
+<!-- ── PRICING ── -->
+<section class="section" id="pricing">
+  <h2>💰 Free vs Pro</h2>
+  <div class="comparison">
+    <table>
+      <thead>
+        <tr>
+          <th>Feature</th>
+          <th>Free</th>
+          <th>Pro</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Manual save</td>
+          <td><span class="check">✓ 5/month</span></td>
+          <td><span class="check">✓ Unlimited</span></td>
+        </tr>
+        <tr>
+          <td>Auto-capture</td>
+          <td><span class="cross">—</span></td>
+          <td><span class="check">✓</span></td>
+        </tr>
+        <tr>
+          <td>Deduplication</td>
+          <td><span class="check">✓</span></td>
+          <td><span class="check">✓</span></td>
+        </tr>
+        <tr>
+          <td>Filters</td>
+          <td><span class="check">✓</span></td>
+          <td><span class="check">✓</span></td>
+        </tr>
+        <tr>
+          <td>All languages</td>
+          <td><span class="check">✓</span></td>
+          <td><span class="check">✓</span></td>
+        </tr>
+        <tr>
+          <td>Playlist picker</td>
+          <td><span class="check">✓</span></td>
+          <td><span class="check">✓</span></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <p style="text-align:center; margin-top:20px; color:var(--text-dim); font-size:14px;">
+    Pro is optional, handled via ExtensionPay. Free tier uses an account to track your limit across devices.
+  </p>
+</section>
+
+<!-- ── LANGUAGES ── -->
+<section class="section">
+  <h2>🌍 25 Languages</h2>
+  <div class="lang-grid">
+    <span class="lang-chip">English</span>
+    <span class="lang-chip">Polski</span>
+    <span class="lang-chip">Deutsch</span>
+    <span class="lang-chip">Español</span>
+    <span class="lang-chip">Français</span>
+    <span class="lang-chip">Italiano</span>
+    <span class="lang-chip">Nederlands</span>
+    <span class="lang-chip">Português (BR)</span>
+    <span class="lang-chip">Português (PT)</span>
+    <span class="lang-chip">Svenska</span>
+    <span class="lang-chip">Norsk</span>
+    <span class="lang-chip">Suomi</span>
+    <span class="lang-chip">Dansk</span>
+    <span class="lang-chip">Čeština</span>
+    <span class="lang-chip">Slovenčina</span>
+    <span class="lang-chip">Magyar</span>
+    <span class="lang-chip">Română</span>
+    <span class="lang-chip">Български</span>
+    <span class="lang-chip">Ελληνικά</span>
+    <span class="lang-chip">Türkçe</span>
+    <span class="lang-chip">Українська</span>
+  </div>
+</section>
+
+<!-- ── PRIVACY ── -->
+<section class="privacy-section" id="privacy">
+  <div class="privacy-content">
+    <h2 style="text-align:center; margin-bottom:40px;">🔒 Privacy Policy</h2>
+
+    <div class="disclaimer">
+      <strong>⚠ Disclaimer:</strong> This privacy policy is provided for informational purposes only. The developer assumes no responsibility or liability for any data loss, account changes, playlist modifications, or any other consequences arising from the use of this extension. The extension is provided "as is" without warranties of any kind. By installing and using Mix Archive, you acknowledge that you do so at your own risk.
+    </div>
+
+    <h3>1. Overview</h3>
+    <p>Mix Archive is a browser extension that saves tracks from YouTube Mix queues into a single archive playlist on the user's YouTube account. The extension does not operate any backend servers, does not collect analytics, and does not track user behavior.</p>
+
+    <h3>2. Data We Do Not Collect</h3>
+    <p>The extension does <strong>not</strong> collect, store, or transmit any of the following:</p>
+    <ul>
+      <li>Personally identifiable information (name, email, address, phone number)</li>
+      <li>Financial information (credit card numbers, bank details)</li>
+      <li>Authentication credentials (passwords, tokens)</li>
+      <li>Private communications (emails, messages, chats)</li>
+      <li>Location data (GPS, IP address, region)</li>
+      <li>Browsing history (visited URLs, timestamps)</li>
+      <li>User activity (clicks, mouse movements, keystrokes)</li>
+    </ul>
+
+    <h3>3. Data Stored Locally</h3>
+    <p>The extension stores the following data in <code>chrome.storage.local</code>, which remains on the user's device and is never transmitted to any server controlled by the developer:</p>
+    <ul>
+      <li>Archive playlist ID and title</li>
+      <li>Language preference</li>
+      <li>Duration filter and skip window settings</li>
+      <li>Auto-capture toggle state</li>
+      <li>Deduplication index (previously saved video IDs)</li>
+      <li>Monthly usage counter (Free tier)</li>
+    </ul>
+    <p>This data can be cleared at any time by removing the extension or clearing browser storage.</p>
+
+    <h3>4. Third-Party Services</h3>
+    <p>The extension interacts with two third-party services. The developer is not responsible for how these services handle your data:</p>
+    <ul>
+      <li><strong>YouTube (youtube.com):</strong> Reads the Mix queue and creates/modifies playlists using the user's existing browser session. See <a href="https://policies.google.com/privacy" target="_blank" rel="noopener">Google's Privacy Policy</a>.</li>
+      <li><strong>ExtensionPay (extensionpay.com):</strong> Verifies Free/Pro subscription status. Payment is handled by ExtensionPay. See <a href="https://extensionpay.com/privacy" target="_blank" rel="noopener">ExtensionPay's Privacy Policy</a>.</li>
+    </ul>
+
+    <h3>5. Permissions</h3>
+    <div class="perm-grid">
+      <div class="perm-item">
+        <strong>storage</strong>
+        <span>Saves user preferences and deduplication data locally. No data leaves the device.</span>
+      </div>
+      <div class="perm-item">
+        <strong>tabs</strong>
+        <span>Checks whether the active tab is a YouTube Mix page. URL check only.</span>
+      </div>
+      <div class="perm-item">
+        <strong>alarms</strong>
+        <span>Polls ExtensionPay login completion (temporary, max 15 minutes). No data transmitted.</span>
+      </div>
+      <div class="perm-item">
+        <strong>Host: youtube.com</strong>
+        <span>Reads Mix queue and writes to user's playlist via their own session.</span>
+      </div>
+      <div class="perm-item">
+        <strong>Host: extensionpay.com</strong>
+        <span>Checks subscription status if user uses Pro features.</span>
+      </div>
+    </div>
+
+    <h3>6. Remote Code</h3>
+    <p>The extension does <strong>not</strong> use any remote code. All JavaScript is bundled within the extension package. No external scripts are loaded at runtime.</p>
+
+    <h3>7. Children's Privacy</h3>
+    <p>The extension is not directed at children under 13 and does not knowingly collect any information from children.</p>
+
+    <h3>8. Data Retention</h3>
+    <p>All locally stored data persists only as long as the extension is installed. Removing the extension deletes all stored data. The developer does not retain any data on any server.</p>
+
+    <h3>9. No Warranty</h3>
+    <p>The extension is provided "as is" and "as available" without any warranties, express or implied. The developer does not guarantee that the extension will function without errors, that YouTube's internal APIs will remain stable, or that playlist operations will always succeed. The developer is not liable for any data loss, playlist corruption, account restrictions, or any other damages resulting from the use of the extension.</p>
+
+    <h3>10. Contact</h3>
+    <p>For questions about this privacy policy, contact the developer through the <a href="https://chromewebstore.google.com/detail/amgdkimmkgfmkdnclchmcbdaafkgflih" target="_blank" rel="noopener">Chrome Web Store listing</a>.</p>
+
+    <p style="margin-top:32px; color:var(--text-dim); font-size:13px;">
+      <em>Last updated: July 30, 2026</em>
+    </p>
+  </div>
+</section>
+
+<!-- ── FOOTER ── -->
+<footer>
+  <p>🎵 <strong>Mix Archive</strong> — Chrome Browser Extension</p>
+  <p style="margin-top:8px;">
+    <a href="https://chromewebstore.google.com/detail/amgdkimmkgfmkdnclchmcbdaafkgflih" target="_blank" rel="noopener">Install from Chrome Web Store →</a>
+  </p>
+  <p style="margin-top:16px; color:#6b7488; font-size:12px;">
+    This page serves as the extension's landing page and privacy policy.<br>
+    The developer assumes no responsibility for any consequences arising from the use of this extension.
+  </p>
+</footer>
+
+</body>
+</html>
