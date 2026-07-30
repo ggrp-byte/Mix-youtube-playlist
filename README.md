@@ -55,15 +55,7 @@
 2. Click "Add to Chrome"
 3. Open a YouTube Mix (`youtube.com/watch?v=...&list=RD...`)
 4. The Mix Archive panel appears in the queue sidebar
-
-### From source (developers)
-
-1. Clone this repo
-2. Open `chrome://extensions`
-3. Enable **Developer mode** (top right toggle)
-4. Click **Load unpacked** → select the project folder
-5. Open a YouTube Mix and start archiving
-
+5. Settings in popup
 ---
 
 ## 🔧 How It Works
@@ -145,36 +137,11 @@ Plus English variants: `en_US`, `en_GB`, `en_AU`, `en_CA`
 - ✅ Playlist operations use your existing YouTube session (as you, on your account)
 - ✅ ExtensionPay is used only if you choose Pro (payment handled by ExtensionPay, not by this extension)
 
-**Full privacy policy:** [View Privacy Policy →](./store-assets/privacy-policy.html)
+**Full privacy policy:** [View Privacy Policy →](https://ggrp-byte.github.io/Mix-youtube-playlist/#privacy)
 
 **Disclaimer:** The developer assumes no responsibility or liability for any data loss, account changes, playlist modifications, or any other consequences arising from the use of this extension. The extension is provided "as is" without warranties of any kind.
 
 ---
-
-## 🛠️ Development
-
-### Project structure
-
-```
-rozszerzenia/
-├── manifest.json          # MV3 manifest
-├── background.js          # Service worker
-├── content.js             # Content script (inline panel)
-├── page-bridge.js         # Page-context InnerTube bridge
-├── popup.html             # Popup UI
-├── popup.js               # Popup logic
-├── styles.css             # Popup styles
-├── locale-runtime.js      # Runtime i18n loader
-├── lib/
-│   └── ExtPay.js          # ExtensionPay library
-├── icons/                 # Extension icons (16–512px)
-├── _locales/              # 25 language bundles
-├── store-assets/          # Chrome Web Store assets
-│   ├── privacy-policy.html
-│   ├── CHROME-STORE-LISTING.txt
-│   └── promo-banner.png
-└── docs/                  # Implementation plans
-```
 
 ### Smoke test
 
