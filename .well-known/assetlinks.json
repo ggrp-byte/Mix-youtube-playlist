@@ -1,11 +1,13 @@
 [
   {
-    "relation": ["delegate_permission/common.handle_all_urls"],
+    "relation": [
+      "delegate_permission/common.handle_all_urls"
+    ],
     "target": {
       "namespace": "android_app",
-      "package_name": "com.example.app",
+      "package_name": "com.example.kicklite",
       "sha256_cert_fingerprints": [
-        "SHA256_FINGERPRINT_HERE"
+        "D1:D7:22:F7:C3:43:C5:26:C1:03:1B:0C:86:E0:DF:D4:E6:03:84:23:85:E0:28:16:6D:A9:E7:DF:E1:D3:C3:7E"
       ]
     }
   }
