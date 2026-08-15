@@ -1,23 +1,39 @@
 <!doctype html>
-<html lang="en">
+<html lang="pl">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>OAuth callback — Mix Archive</title>
+  <title>Callback OAuth — Mix Archive</title>
   <style>
     body{font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;background:#0b0d12;color:#f4f7fb;display:flex;align-items:center;justify-content:center;height:100vh;margin:0}
-    .card{max-width:720px;padding:28px;border-radius:12px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);text-align:center}
+    .card{max-width:720px;padding:22px;border-radius:12px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);text-align:center}
     code{background:rgba(255,255,255,0.04);padding:4px 8px;border-radius:6px;color:#ffd5d7}
     a{color:#ff9966}
+    #fallback{display:none;margin-top:12px;text-align:left}
+    .btn{display:inline-block;padding:10px 14px;border-radius:10px;background:#ff9966;color:#081018;text-decoration:none;font-weight:700;margin-top:8px}
+    .small{color:#8b95a7;font-size:13px}
+    pre{white-space:pre-wrap;word-break:break-word;background:transparent;border:0;color:var(--text);text-align:left}
+    .row{display:flex;gap:8px;align-items:center}
+    button.copy{padding:8px 10px;border-radius:8px;border:none;background:#2b3946;color:#fff;cursor:pointer}
   </style>
 </head>
 <body>
   <div class="card">
-    <h1>OAuth callback received</h1>
-    <p id="msg">Processing…</p>
-    <p style="margin-top:18px;font-size:13px;color:#8b95a7">If this page doesn't close automatically, copy the code below back into the app that started the login.</p>
-    <pre id="out" style="margin-top:12px;background:transparent;border:0;color:var(--text);text-align:left"></pre>
-    <p style="margin-top:18px"><a href="/Mix-youtube-playlist/">Return to site</a></p>
+    <h1>Odebrano callback OAuth</h1>
+    <p id="msg">Przetwarzam…</p>
+    <div id="fallback">
+      <p class="small">Jeśli aplikacja nie otworzyła się automatycznie, użyj przycisku poniżej lub skopiuj kod i wklej go do aplikacji testowej.</p>
+      <div style="margin-top:8px;">
+        <a id="openLink" class="btn" href="#">Otwórz w aplikacji</a>
+      </div>
+      <div style="margin-top:12px;">
+        <div class="row">
+          <pre id="out"></pre>
+          <button class="copy" id="copyBtn">Kopiuj</button>
+        </div>
+      </div>
+      <p style="margin-top:12px"><a href="/Mix-youtube-playlist/">Powrót na stronę</a></p>
+    </div>
   </div>
 
   <script>
@@ -32,37 +48,82 @@
       var params = parseQuery(location.search);
       var msgEl = document.getElementById('msg');
       var outEl = document.getElementById('out');
+      var fallback = document.getElementById('fallback');
+      var openLink = document.getElementById('openLink');
+      var copyBtn = document.getElementById('copyBtn');
+
+      copyBtn.addEventListener('click', function(){
+        var text = outEl.textContent || '';
+        navigator.clipboard && navigator.clipboard.writeText(text).then(function(){
+          copyBtn.textContent = 'Skopiowano!';
+          setTimeout(function(){ copyBtn.textContent = 'Kopiuj'; }, 1500);
+        }).catch(function(){
+          alert('Kopiowanie nie powiodło się. Skopiuj ręcznie.');
+        });
+      });
 
       if(params.error){
-        msgEl.textContent = 'OAuth returned an error: ' + params.error;
+        msgEl.textContent = 'OAuth zwrócił błąd: ' + params.error;
         outEl.textContent = JSON.stringify(params, null, 2);
+        fallback.style.display = 'block';
         return;
       }
 
       if(params.code){
-        msgEl.textContent = 'Authorization code received.';
+        msgEl.textContent = 'Otrzymano kod autoryzacyjny.';
         outEl.textContent = JSON.stringify(params, null, 2);
 
-        // If an opener window exists (popup-based flow), postMessage the code back and close.
+        // Najpierw: jeśli istnieje opener (popup), wyślij postMessage (web flow)
         try{
           if(window.opener && !window.opener.closed){
             window.opener.postMessage({type:'oauth_callback', params: params}, '*');
-            msgEl.textContent = 'Sent code to the opener window — this page will close automatically.';
+            msgEl.textContent = 'Wysłano kod do okna-rodzica — strona za chwilę się zamknie.';
             setTimeout(function(){ window.close(); }, 800);
             return;
           }
         }catch(e){
-          // ignore cross-origin issues
+          // ignore cross-origin
         }
 
-        // No opener: show the code and suggest manual copy
-        msgEl.textContent = 'No opener detected. Copy the code below back into the app that started the login.';
+        // Brak opener — spróbuj przekierować do aplikacji mobilnej przez deep link
+        var code = params.code || '';
+        var state = params.state || '';
+        var scheme = 'mixarchive://oauth'; // DOMYŚLNY SCHEME. Jeśli masz inny, powiedz.
+        var deeplink = scheme + '?code=' + encodeURIComponent(code) + '&state=' + encodeURIComponent(state);
+
+        // Spróbuj otworzyć deep link (najpierw location, a także iframe jako fallback)
+        function tryOpen(){
+          try{
+            // iOS/modern browsers: ustaw location
+            window.location.href = deeplink;
+          }catch(e){}
+          try{
+            var i = document.createElement('iframe');
+            i.style.display = 'none';
+            i.src = deeplink;
+            document.body.appendChild(i);
+            setTimeout(function(){ document.body.removeChild(i); }, 1500);
+          }catch(e){}
+        }
+
+        tryOpen();
+        msgEl.textContent = 'Próbuję otworzyć aplikację mobilną…';
+
+        // Pokaż UI fallback jeśli aplikacja nie przechwyci linku w ~1.2s
+        openLink.href = deeplink;
+        openLink.setAttribute('target','_self');
+
+        setTimeout(function(){
+          fallback.style.display = 'block';
+        }, 1200);
+
         return;
       }
 
-      // No code and no error — show full query for debugging
-      msgEl.textContent = 'No code found in the URL. Full query parameters are shown below.';
+      // Brak code i error — pokaż parametry do debugowania
+      msgEl.textContent = 'Brak kodu w adresie URL. Poniżej pełne parametry.';
       outEl.textContent = JSON.stringify(params, null, 2);
+      fallback.style.display = 'block';
     })();
   </script>
 </body>
