@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>OAuth callback — Mix Archive</title>
+  <style>
+    body{font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;background:#0b0d12;color:#f4f7fb;display:flex;align-items:center;justify-content:center;height:100vh;margin:0}
+    .card{max-width:720px;padding:28px;border-radius:12px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);text-align:center}
+    code{background:rgba(255,255,255,0.04);padding:4px 8px;border-radius:6px;color:#ffd5d7}
+    a{color:#ff9966}
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>OAuth callback received</h1>
+    <p id="msg">Processing…</p>
+    <p style="margin-top:18px;font-size:13px;color:#8b95a7">If this page doesn't close automatically, copy the code below back into the app that started the login.</p>
+    <pre id="out" style="margin-top:12px;background:transparent;border:0;color:var(--text);text-align:left"></pre>
+    <p style="margin-top:18px"><a href="/Mix-youtube-playlist/">Return to site</a></p>
+  </div>
+
+  <script>
+    (function(){
+      function parseQuery(q){
+        var p = new URLSearchParams(q);
+        var out = {};
+        for (const [k,v] of p.entries()) out[k]=v;
+        return out;
+      }
+
+      var params = parseQuery(location.search);
+      var msgEl = document.getElementById('msg');
+      var outEl = document.getElementById('out');
+
+      if(params.error){
+        msgEl.textContent = 'OAuth returned an error: ' + params.error;
+        outEl.textContent = JSON.stringify(params, null, 2);
+        return;
+      }
+
+      if(params.code){
+        msgEl.textContent = 'Authorization code received.';
+        outEl.textContent = JSON.stringify(params, null, 2);
+
+        // If an opener window exists (popup-based flow), postMessage the code back and close.
+        try{
+          if(window.opener && !window.opener.closed){
+            window.opener.postMessage({type:'oauth_callback', params: params}, '*');
+            msgEl.textContent = 'Sent code to the opener window — this page will close automatically.';
+            setTimeout(function(){ window.close(); }, 800);
+            return;
+          }
+        }catch(e){
+          // ignore cross-origin issues
+        }
+
+        // No opener: show the code and suggest manual copy
+        msgEl.textContent = 'No opener detected. Copy the code below back into the app that started the login.';
+        return;
+      }
+
+      // No code and no error — show full query for debugging
+      msgEl.textContent = 'No code found in the URL. Full query parameters are shown below.';
+      outEl.textContent = JSON.stringify(params, null, 2);
+    })();
+  </script>
+</body>
+</html>
